@@ -4,6 +4,34 @@ import AuthController from "../controllers/AuthController";
 const authRouter = Router();
 const authController = Container.get(AuthController)
 
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     summary: User registration endpoint
+ *     description: Register a new user.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "user@example.com"
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "mypassword123"
+ *     responses:
+ *       200:
+ *         description: Registration successful.
+ *       400:
+ *         description: Invalid request data.
+ */
+
 authRouter.post("/register", async (req: Request, res: Response) => {
     authController.register(req,res)
 });

@@ -29,8 +29,9 @@ export const env = {
 
     app: {
         name: (pkg as any).name,
-        displayName: (pkg as any).displayName,
+        displayName: (pkg as any).displayName || (pkg as any).name,
         version: (pkg as any).version,
+        url: getOsEnv("APP_URL"),
         port: normalizePort(process.env.PORT || undefined)
     },
     log: {
@@ -42,7 +43,7 @@ export const env = {
             port: normalizePort(getOsEnv("MONGODB_PORT")),
             user: getOsEnv("MONGODB_USERNAME"),
             pass: getOsEnv("MONGODB_PASSWORD"),
-            database: getOsEnv("MONGODB_DATBASE"),
+            database: getOsEnv("MONGODB_DATABASE"),
         },
         pg: {
             host: getOsEnv("PG_HOST"),
@@ -60,10 +61,8 @@ export const env = {
             pass: getOsEnv("REDIS_PASSWORD"),
         }
     },
-
     jwtConfig:{
         secret: getOsEnv('JWT_SECRET'),
         issuer: getOsEnv('JWT_ISSUER'),
     }
-
 };
