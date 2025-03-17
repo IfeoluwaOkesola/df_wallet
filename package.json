@@ -10,8 +10,15 @@
   "private": false,
   "scripts": {
     "dev": "nodemon",
+    "build": "tsc",
     "lint": "eslint -c ./.eslintrc.js ./src --format stylish --fix --ext .ts",
-    "start": "yarn lint && yarn dev"
+    "start": "yarn lint && yarn dev",
+    "typeorm": "ts-node ./node_modules/typeorm/cli.js",
+    "typeorm:ds": "npm run typeorm -- -d ./src/config/postgres",
+    "migration:create": "npm run typeorm migration:create",
+    "migration:generate": "npm run typeorm:ds -- migration:generate",
+    "migration:run": "npm run typeorm:ds -- migration:run",
+    "migration:revert": "npm run typeorm:ds -- migration:revert"
   },
   "dependencies": {
     "@types/node": "^22.13.1",
@@ -39,6 +46,7 @@
     "typeorm": "^0.3.20",
     "typescript": "^5.7.3",
     "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "yarn": "1.22.22"
   },
   "devDependencies": {
