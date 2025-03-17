@@ -3,7 +3,11 @@ import UserWithdrawalInformation from "../models/postgres/UserWithdrawalInformat
 
 
 export const UserWithdrawalInformationRepository = dataSource.getRepository(UserWithdrawalInformation).extend({
-    async add(account: Partial<UserWithdrawalInformation>): Promise<UserWithdrawalInformation> {
+    async add(userId: string, accountDetails: Partial<UserWithdrawalInformation>): Promise<UserWithdrawalInformation> {
+        const account ={
+            ...accountDetails,
+            userId
+        }
         return this.save(account);
     },
 
@@ -11,15 +15,27 @@ export const UserWithdrawalInformationRepository = dataSource.getRepository(User
         return this.findOne({ where: { id } });
     },
 
+    async findByUserAndId(userId: string, id: number): Promise<UserWithdrawalInformation> {
+        return this.findOne({ where: { userId, id } });
+    },
+
+    async findByUser(userId: string): Promise<UserWithdrawalInformation[]> {
+        return this.find({ where: { userId } });
+    },
+    
+    async findByAccountNumber(accountNumber: string): Promise<UserWithdrawalInformation> {
+        return this.findOne({ where: { accountNumber } });
+    },
+
     async list(userId: string): Promise<UserWithdrawalInformation[]> {
         return this.find({ where: { userId } });
     },
 
-    async updateUserAccount(accountId: number, updates?: Partial<UserWithdrawalInformation>): Promise<void> {
+    async updateUserAccount(user_id: string, accountId: number, updates?: Partial<UserWithdrawalInformation>): Promise<void> {
         await this.update({ id: accountId }, updates);
     },
 
-    async deleteUserWithdrawalAccount(accountId: number) {
+    async deleteUserWithdrawalAccount(user_id: string, accountId: number) {
         const account = await this.findById(accountId);
         return this.remove([account]);
     }

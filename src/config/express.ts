@@ -10,7 +10,7 @@ import { logLoader } from "./logger";
 import { mongoDBLoader } from "./mongodb";
 import { postgresLoader } from "./postgres";
 import { redisLoader } from "./redis";
-
+import routes from "../api/routes";
 
 const { app: appInfo } = env;
 
@@ -47,7 +47,10 @@ const expressConfig = async (app: Application): Promise<void> => {
     await mongoDBLoader();
     await redisLoader();
 
+    app.use('/api',routes);
+
     app.get("/", (req:Request, res:Response) => res.send(`${appInfo.displayName} - v${appInfo.version}`));
+    
 };
 
 export default expressConfig;

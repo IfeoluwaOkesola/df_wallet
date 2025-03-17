@@ -59,5 +59,11 @@ export const env = {
             user: getOsEnv("REDIS_USERNAME"),
             pass: getOsEnv("REDIS_PASSWORD"),
         }
+    },
+
+    jwtConfig:{
+        secret: getOsEnv('JWT_SECRET'),
+        issuer: getOsEnv('JWT_ISSUER'),
     }
+
 };

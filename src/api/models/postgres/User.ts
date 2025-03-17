@@ -16,21 +16,21 @@ export default class User {
     @Column()
         password: string;
 
-    @Column()
-    @Index()
+    @Column({ nullable: true })
+    // @Index()
         firstName: string;
 
-    @Column()
-    @Index()
+    @Column({ nullable: true })
+    // @Index()
         lastName: string;
 
-    @Column()
+    @Column({nullable: true})
         address: string;
 
-    @Column()
+    @Column({ nullable: true })
         phoneNumber: string;
 
-    @Column({ type: "integer" })
+    @Column({ type: "integer", nullable: true })
         stateLgaId: number;
 
     @Column({ nullable: true })
@@ -42,6 +42,9 @@ export default class User {
 
     @Column({ nullable: true })
         pin?: string;
+
+    @Column({ nullable: true })
+    otp?: string;
 
     @Column({ default: false })
     @Index()

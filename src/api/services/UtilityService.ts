@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import Chance from "chance";
-
+import jwt from "jsonwebtoken"
+import { env } from "../../env"
 import { CharacterCasing } from "../enums/CharacterCasing";
 import User from "../models/postgres/User";
 
@@ -39,7 +40,22 @@ export default class UtilityService {
 
         delete user.password;
         delete user.pin;
+        delete user.otp;
 
         return user;
+    }
+
+    /**
+     * generateJWT
+     */
+    public static generateJWT(email: string, user_id: string) {
+        const jwtData = {
+            email, user_id
+        }
+        return jwt.sign({ jwtData }, env.jwtConfig.secret ,{
+            expiresIn: '3600s',
+            issuer: env.jwtConfig.secret,
+            audience: email
+        })
     }
 }
