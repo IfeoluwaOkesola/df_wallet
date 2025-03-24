@@ -4,14 +4,14 @@
 import type { TsoaRoute } from '@tsoa/runtime';
 import {  fetchMiddlewares, ExpressTemplateService } from '@tsoa/runtime';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { WithdrawalAccountController } from '../controllers/WithdrawalAccountController';
+import { WithdrawalAccountController } from './../controllers/WithdrawalAccountController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { UserController } from '../controllers/UserController';
+import { UserController } from './../controllers/UserController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PasswordResetController } from './../controllers/PasswordResetController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { AuthController } from '../controllers/AuthController';
-import { expressAuthentication } from '../middlewares/AppMiddleware';
+import { AuthController } from './../controllers/AuthController';
+import { expressAuthentication } from './../middlewares/AppMiddleware';
 // @ts-ignore - no great way to install types from subpackage
 import { iocContainer } from './../../ioc';
 import type { IocContainer, IocContainerFactory } from '@tsoa/runtime';

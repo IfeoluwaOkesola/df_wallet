@@ -1,80 +1,132 @@
 import { Inject, Service } from 'typedi';
-import { Request, Response } from "express";
+import { Controller, Route, Post, Security, Request, Tags, Example, Get, Path, Delete } from "tsoa";
 import WithdrawalAccountService from "../services/WithdrawalAccountService";
 import { Logger } from '../../lib/logger';
-
+import { CreateWithdrawalAccountDTO } from '../dtos/WithdrawalAccountDTO';
+import { CustomApiResponse, serverErrorResponse, successResponse } from '../helpers/responseHandlers';
+import { ACTIVITY_TYPES } from '../constants/activity_types';
+import { dynamic_messages, MESSAGES } from '../constants/messages';
+@Tags("Withdrawal Bank Accounts")
+@Route("withdrawal-accounts")
 @Service()
-export default class WithdrawalAccountController {
+export class WithdrawalAccountController extends Controller {
     constructor(
-        private readonly withdrawalAccountService: WithdrawalAccountService,
         @Inject(()=> Logger) private readonly logger: Logger,
-    ){}
+        private readonly withdrawalAccountService: WithdrawalAccountService,
+    ){
+        super()
+        this.logger = new Logger(WithdrawalAccountController.name);
+    }
 
-    public async createNewWithdrawalAccount(req: Request, res: Response) {
+    @Post("/")
+    @Security("bearerAuth")
+    public async createNewWithdrawalAccount(@Request() req: any): Promise<CustomApiResponse>{
         try {
-                const user_id = req.authId;
-                const newWallet = await this.withdrawalAccountService.addWithdrawalAccount(user_id, req.body);
-                this.logger.info(newWallet.message)
+            const user_id = req.authId;
+            const createAccountData: CreateWithdrawalAccountDTO ={
+                userId: req.userId,
+                bankName: req.bankName,
+                bankCode: req.bankCode,
+                accountNumber: req.accountNumber,
+                accountName: req.accountName,
+                currency: req.currency
+            }
+            const newWallet = await this.withdrawalAccountService.addWithdrawalAccount(user_id, createAccountData);
+            const { message, account } = newWallet;
+            this.logger.info({
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.CREATION,
+                message,
+                metadata: {
+                    account: {
+                        id: account?.id
+                    }
+                }
+            });
                 
                 if (newWallet.isSuccess) {
-                    return res.status(201).json({ message: newWallet.message })
+                    if (newWallet.isSuccess) {
+                        this.setStatus(201)
+                        return successResponse(message as string, account, 201)
+                    }
                 }
-                return res.status(400).json({ message: newWallet.message })
+                this.setStatus(400);
+            return successResponse(message as string)
         } catch (error: any) {
                this.logger.error({
-                activity_type: "User registration",
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.CREATION,
                 message: error.message,
                 metadata: {}
             });
-                throw new Error("Something went wrong");
+                 return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR);
             }
     }
 
-    public async deleteWithdrawalAccount(req: Request, res: Response) {
+    @Delete("/{account_id}")
+    @Security("bearerAuth")
+    public async deleteWithdrawalAccount(
+            @Request() req: any,
+            @Path() account_id: number
+    ): Promise<CustomApiResponse> {
         try {
-            const account_id = req.params.id as number
             const user_id = req.authId;
             const withdrwalAccountDeleted = await this.withdrawalAccountService.deleteWithdrawalAccount(user_id,account_id);
+            const { isSuccess, message, account } = withdrwalAccountDeleted;
+
             this.logger.info({
-                activity_type: "Remove withdrawal account",
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.DELETE,
                 message: withdrwalAccountDeleted?.message,
                 metadata: {
-                    user: {
-                        email: withdrwalAccountDeleted.data.accountNumber
+                    account:{
+                        id: account_id
                     }
                 }
             });
             if (withdrwalAccountDeleted.isSuccess) {
-                return res.status(200).json({ message: withdrwalAccountDeleted.message })
+                if (isSuccess) {
+                    this.setStatus(200)
+                    return successResponse(message as string,null)
+                }
             }
-            return res.status(403).json({ message: withdrwalAccountDeleted.message })
+            this.setStatus(400)
+            return successResponse(message as string)
         } catch (error: any) {
            this.logger.error({
-                activity_type: "Remove withdrawal account",
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.DELETE,
                 message: error.message,
                 metadata: {}
             });
-            throw new Error("Something went wrong");
+            return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR)
         }
     }
 
-    public async listWithdrawalAccounts(req: Request, res: Response) {
+    @Get("/")
+    @Security("bearerAuth")
+    public async listWithdrawalAccounts(@Request() req: any): Promise<CustomApiResponse> {
         try {
             const user_id = req.authId;
             const withdrwalAccounts = await this.withdrawalAccountService.fetchWithdrawalAccounts(user_id);
             this.logger.info({
-                activity_type: "fetch user's withdrawal accounts",
-                message: "User withdrawal accounts fetched successfully",
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.LIST,
+                message: dynamic_messages.FETCHED_SUCCESSFULLY(MESSAGES.WITHDRAWAL_ACCOUNT.NAME),
                 metadata: {
                     user: {
                         email: req.authEmail
                     }
                 }
             });
-            return res.status(200).json({ data: withdrwalAccounts })
+
+            if (withdrwalAccounts.isSuccess) {
+                if (withdrwalAccounts.isSuccess) {
+                    this.setStatus(200)
+                    return successResponse(withdrwalAccounts.message as string, withdrwalAccounts.accounts)
+                }
+            }
+
+            this.setStatus(400);
+            return successResponse(withdrwalAccounts.message as string)
         } catch (error: any) {
            this.logger.error({
-                activity_type: "User registration",
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.LIST,
                 message: error.message,
                 metadata: {
                     user: {
@@ -82,17 +134,20 @@ export default class WithdrawalAccountController {
                     }
                 }
             });
-            throw new Error("Something went wrong");
+            return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR)
         }
     }
-
-    public async showWithdrawalAccountDetails(req: Request, res: Response) {
+    @Get("/{account_id}")
+    @Security("bearerAuth")
+    public async showWithdrawalAccountDetails(
+        @Request() req: any,
+        @Path() account_id: number
+    ): Promise<CustomApiResponse> {
         try {
-            const account_id = req.params.id as number
             const user_id = req.authId;
             const withdrwalAccount = await this.withdrawalAccountService.getWithdrawalAccount(user_id, account_id);
             this.logger.info({
-                activity_type: "Fetch one withdrawal account of a user",
+                activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.SHOW,
                 message: withdrwalAccount.message,
                 metadata: {
                     user: {
@@ -100,18 +155,24 @@ export default class WithdrawalAccountController {
                     }
                 }
             });
+
             if (withdrwalAccount.isSuccess) {
-                return res.status(200).json({ data: withdrwalAccount?.data })
+                if (withdrwalAccount.isSuccess) {
+                    this.setStatus(200)
+                    return successResponse(withdrwalAccount.message as string, withdrwalAccount.data)
+                }
             }
 
-            return res.status(403).json({ message: withdrwalAccount.message })
+            this.setStatus(400);
+            return successResponse(withdrwalAccount.message as string)
+
         } catch (error: any) {
            this.logger.error({
-               activity_type: "Fetch one withdrawal account of a user",
+               activity_type: ACTIVITY_TYPES.WITHDRAWAL_ACCOUNT.SHOW,
                 message: error.message,
                 metadata: {}
             });
-            throw new Error("Something went wrong");
+            return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR)
         }
     }
 }

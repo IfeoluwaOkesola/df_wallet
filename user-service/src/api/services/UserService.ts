@@ -6,6 +6,10 @@ import User from "../models/postgres/User";
 import { UserRepository } from "../repositories/UserRepository";
 
 import UtilityService from "./UtilityService";
+import { CreatePinResponseDTO } from "../dtos/UserPinDTO";
+import { UpdateProfileResponseDTO } from "../dtos/UserDTO";
+import { AppError } from "../errors/AppError";
+import { MESSAGES } from "../constants/messages";
 
 
 @Service()
@@ -14,18 +18,21 @@ export default class UserService {
         // private log: Logger
     ){}
     
-    public async getUserInformation(id: string): Promise<User> {
+    public async getUserInformation(id: string): Promise<User|null> {
         const existingUser = await UserRepository.findById(id);
+        if (!existingUser) return null;
         const user = UtilityService.sanitizeUserObject(existingUser);
         return user;
     }
 
-    public async setPin(id: string, pin: string): Promise<{ isSuccess: boolean, message?: string }> {
+    public async setPin(id: string, pin: string): Promise<CreatePinResponseDTO> {
         // Password verification
         const user = await UserRepository.findById(id);
-
+        if (!user){
+            throw new AppError(MESSAGES.USER.NOT_FOUND, 404);
+        }
         if (user?.pin){
-            return { isSuccess: false, message: "You already have a transaction PIN on your account!" };
+            throw new AppError(MESSAGES.PIN.ALREADY_EXISTS);
         }
         else{
             await UserRepository.updateUserPin(user, { pin });
@@ -34,14 +41,17 @@ export default class UserService {
 
     }
 
-    public async update(id:string, req: UpdateUserRequest): Promise<{isSuccess: boolean, message?: string, user?: User}> {
+    public async update(id:string, req: UpdateUserRequest): Promise<UpdateProfileResponseDTO> {
        
         const existingUser = await UserRepository.findById(id);
         if(!existingUser) {
-            return { isSuccess: false, message: "User doesn't exist!" };
+            throw new AppError(MESSAGES.USER.NOT_FOUND, 404); 
         }
 
         const updatedUser = await UserRepository.updateById(id, { ...req });
+        if (!updatedUser) {
+            throw new AppError(MESSAGES.USER.NOT_FOUND, 404); 
+        }
         const user = UtilityService.sanitizeUserObject(updatedUser);
     
         return { isSuccess: true, user };

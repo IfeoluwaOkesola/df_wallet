@@ -26,7 +26,6 @@
     "migration:revert": "npm run typeorm:ds -- migration:revert"
   },
   "dependencies": {
-    "@types/bcryptjs": "^3.0.0",
     "@types/chance": "^1.1.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -68,6 +67,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.7.5",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/morgan": "^1.9.9",

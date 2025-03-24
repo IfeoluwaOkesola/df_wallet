@@ -1,49 +1,62 @@
+import { CustomApiResponse, serverErrorResponse } from '../helpers/responseHandlers';
 import UserService from "../services/UserService";
 import { Inject, Service } from 'typedi';
-import { Request, Response } from "express";
 import { Logger } from "../../lib/logger";
+import { Example, Get, Request, Route, Security, Tags, Controller, Put } from "tsoa";
+import { FetchProfileResponseDTO, UpdateProfileResponseDTO } from "../dtos/UserDTO";
+import { CreatePinDTO } from "../dtos/UserPinDTO";
+import { errorResponse, successResponse } from "../helpers/responseHandlers";
+import { MESSAGES } from "../constants/messages";
+import { ACTIVITY_TYPES } from "../constants/activity_types";
 
 @Service()
-export default class UserController {
+@Tags("User Profile")
+@Route("users")
+export class UserController extends Controller {
     private readonly logger: Logger
       constructor(
             private readonly userService: UserService,
             @Inject(()=> Logger) logger: Logger,
         ){
+          super()
           this.logger = new Logger(UserController.name);
         }
 
-    public async fetchProfile(req: Request, res: Response) {
+    @Get("/")
+    @Security("bearerAuth")
+    public async fetchProfile(@Request() req: any): Promise<FetchProfileResponseDTO> {
         try {
             const authUserId = req.authId
-            const newUser = await this.userService.getUserInformation(authUserId);
-            let message = "User account was not found!";
+            const fetchedUser = await this.userService.getUserInformation(authUserId);
+            let message = MESSAGES.USER.NOT_FOUND;
             this.logger.info({
-                    activity_type: "Fetch user profile",
+                    activity_type: ACTIVITY_TYPES.USER_PROFILE,
                     message,
                     metadata: {
                         user: {
-                            email: newUser.email
+                            email: fetchedUser?.email
                         }
                     }
                 });
-            if (!newUser) {
-                return res.status(404).json({ message })
+            if (!fetchedUser) {
+                this.setStatus(404)
+                return errorResponse(message,null,404)
             }
-            message = "User account info was fetched!";
+            message = MESSAGES.USER.USER_ACCOUNT_FETCHED;
             this.logger.info({
-                    activity_type: "Fetch user profile",
+                activity_type: ACTIVITY_TYPES.USER_PROFILE,
                     message,
                     metadata: {
                         user: {
-                            email: newUser.email
+                            email: fetchedUser.email
                         }
                     }
                 });
-            return res.status(200).json({data: newUser})
+            this.setStatus(200)
+            return successResponse(message, fetchedUser)
         } catch (error: any) {
             this.logger.error({
-                activity_type: "Fetch user profile",
+                activity_type: ACTIVITY_TYPES.USER_PROFILE,
                 message: error.message,
                 metadata: {
                     user: {
@@ -51,74 +64,83 @@ export default class UserController {
                     }
                 }
             });
-            throw new Error("Something went wrong");
+            return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public async createNewPin(req: Request, res: Response) {
+    @Security("bearerAuth")
+    public async createNewPin(@Request() req: any) {
         try {
-            const pin = req.body.pin;
+            const pin = req.pin;
             const user_id = req.authId;
             const createPin = await this.userService.setPin(user_id, pin);
-            let message = createPin.message;
+            const { message, isSuccess } = createPin
+
             if (createPin.isSuccess) {
                 this.logger.info({
-                    activity_type: "Fetch user profile",
-                    message: createPin.message,
+                    activity_type: ACTIVITY_TYPES.TRANSACTION_PIN.CREATION,
+                    message: message,
                     metadata: {}
                 });
-                return res.status(200).json({ message})
+                this.setStatus(201)
+                return successResponse(message as string,null, 201)
             }
             this.logger.info({
-                    activity_type: "Fetch user profile",
+                    activity_type: ACTIVITY_TYPES.TRANSACTION_PIN.CREATION,
                     message: createPin.message,
                     metadata: {
                         user: {}
                     }
                 });
-            return res.status(400).json({ message})
+            this.setStatus(400)
+            return errorResponse(message as string)
         } catch (error: any) {
             this.logger.error({
-                activity_type: "User registration",
+                activity_type: ACTIVITY_TYPES.TRANSACTION_PIN.CREATION,
                 message: error.message,
                 metadata: {}
             });
-            throw new Error("Something went wrong");
+            return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR);
         }
     }
 
-    public async updateProfile(req: Request, res: Response) {
+    @Put("/")
+    @Security("bearerAuth")
+    public async updateProfile(@Request() req: any): Promise<CustomApiResponse> {
         try {
             const updatedUser = await this.userService.update(req.authId, req.body);
+            const { message, user, isSuccess } = updatedUser;
             if (!updatedUser?.isSuccess) {
                 this.logger.info({
-                    activity_type: "Update user profile",
-                    message: updatedUser.message,
+                    activity_type: ACTIVITY_TYPES.USER.PROFILE_UPDATE,
+                    message,
                     metadata: {
                         user: {
-                            email: updatedUser.user.email
+                            email: updatedUser?.user?.email
                         }
                     }
                 });
-                return res.status(400).json({ message: updatedUser?.message })
+                this.setStatus(400)
+                return errorResponse(message as string, user)
             }
             this.logger.info({
-                    activity_type: "Update user profile",
+                    activity_type: ACTIVITY_TYPES.USER.PROFILE_UPDATE,
                     message: updatedUser.message,
                     metadata: {
                         user: {
-                            email: updatedUser.user.email
+                            email: updatedUser?.user?.email
                         }
                     }
                 });
-            return res.status(200).json({ data: updatedUser })
+            this.setStatus(200)
+            return successResponse(message as string, user)
         } catch (error: any) {
             this.logger.error({
-                activity_type: "Update User profile",
+                activity_type: ACTIVITY_TYPES.USER.PROFILE_UPDATE,
                 message: error.message,
                 metadata: {}
             });
-            throw new Error("Something went wrong");
+            return serverErrorResponse(MESSAGES.COMMON.INTERNAL_SERVER_ERROR);
         }
     }
 }
